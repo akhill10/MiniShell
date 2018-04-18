@@ -6,15 +6,10 @@
 #include<sys/wait.h>
 #include<readline/readline.h>
 #include<readline/history.h>
- 
 #define MAXCOM 1000 // max number of letters to be supported
 #define MAXLIST 100 // max number of commands to be supported
- 
-// Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
- 
-// Greeting shell during startup
-void init_shell()
+void init_shell()//Start
 {
     clear();
     printf("\n\n\n\n******************"
@@ -29,9 +24,7 @@ void init_shell()
     sleep(1);
     clear();
 }
- 
-// Function to take input
-int takeInput(char* str)
+int takeInput(char* str) //Input 
 {
     char* buf;
  
@@ -44,17 +37,13 @@ int takeInput(char* str)
         return 1;
     }
 }
- 
-// Function to print Current Directory.
 void printDir()
 {
     char cwd[1024];
     getcwd(cwd, sizeof(cwd));
     printf("\nDir: %s", cwd);
 }
- 
-// Function where the system command is executed
-void execArgs(char** parsed)
+void execArgs(char** parsed)//single command executed
 {
     // Forking a child
     pid_t pid = fork(); 
@@ -68,17 +57,13 @@ void execArgs(char** parsed)
         }
         exit(0);
     } else {
-        // waiting for child to terminate
         wait(NULL); 
         return;
     }
 }
- 
-// Function where the piped system commands is executed
-void execArgsPiped(char** parsed, char** parsedpipe)
+void execArgsPiped(char** parsed, char** parsedpipe)//pipe commands executed 
 {
-    // 0 is read end, 1 is write end
-    int pipefd[2]; 
+    int pipefd[2];//0 read 1 write  
     pid_t p1, p2;
  
     if (pipe(pipefd) < 0) {
@@ -92,8 +77,6 @@ void execArgsPiped(char** parsed, char** parsedpipe)
     }
  
     if (p1 == 0) {
-        // Child 1 executing..
-        // It only needs to write at the write end
         close(pipefd[0]);
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
@@ -103,16 +86,12 @@ void execArgsPiped(char** parsed, char** parsedpipe)
             exit(0);
         }
     } else {
-        // Parent executing
         p2 = fork();
  
         if (p2 < 0) {
             printf("\nCould not fork");
             return;
         }
- 
-        // Child 2 executing..
-        // It only needs to read at the read end
         if (p2 == 0) {
             close(pipefd[1]);
             dup2(pipefd[0], STDIN_FILENO);
@@ -122,14 +101,11 @@ void execArgsPiped(char** parsed, char** parsedpipe)
                 exit(0);
             }
         } else {
-            // parent executing, waiting for two children
             wait(NULL);
             wait(NULL);
         }
     }
 }
- 
-// Help command builtin
 void openHelp()
 {
     puts("\n***WELCOME TO MY SHELL HELP***"
@@ -145,8 +121,6 @@ void openHelp()
  
     return;
 }
- 
-// Function to execute builtin commands
 int ownCmdHandler(char** parsed)
 {
     int NoOfOwnCmds = 4, i, switchOwnArg = 0;
@@ -188,8 +162,6 @@ int ownCmdHandler(char** parsed)
  
     return 0;
 }
- 
-// function for finding pipe
 int parsePipe(char* str, char** strpiped)
 {
     int i;
@@ -200,13 +172,11 @@ int parsePipe(char* str, char** strpiped)
     }
  
     if (strpiped[1] == NULL)
-        return 0; // returns zero if no pipe is found.
+        return 0; // no pipe found 
     else {
         return 1;
     }
 }
- 
-// function for parsing command words
 void parseSpace(char* str, char** parsed)
 {
     int i;
@@ -252,20 +222,11 @@ int main()
     init_shell();
  
     while (1) {
-        // print shell line
         printDir();
-        // take input
         if (takeInput(inputString))
             continue;
-        // process
         execFlag = processString(inputString,
         parsedArgs, parsedArgsPiped);
-        // execflag returns zero if there is no command
-        // or it is a builtin command,
-        // 1 if it is a simple command
-        // 2 if it is including a pipe.
- 
-        // execute
         if (execFlag == 1)
             execArgs(parsedArgs);
  
